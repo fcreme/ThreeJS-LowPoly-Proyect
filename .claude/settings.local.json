@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:andrewhungblog.wordpress.com)",
+      "Bash(dir:*)",
+      "Bash(npm install:*)",
+      "Bash(timeout 8 npx vite:*)",
+      "Bash(node -e:*)",
+      "Bash(unzip:*)",
+      "Bash(python3:*)",
+      "Bash(python:*)"
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "fog": {
+    "color": "0x0a0a0f",
+    "density": 0.045
+  },
+  "ambient": {
+    "color": "0x1a1a2e",
+    "intensity": 0.15
+  },
+  "moonlight": {
+    "color": "0x4466aa",
+    "intensity": 0.3
+  },
+  "renderer": {
+    "exposure": 0.4,
+    "toneMapping": "ACESFilmic"
+  }
+}

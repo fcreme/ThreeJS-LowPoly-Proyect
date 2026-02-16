@@ -1,0 +1,24 @@
+{
+  "title": "Dark Ink Studio",
+  "description": "Where shadows become art. Specializing in blackwork, dark realism, and occult-inspired tattoo design.",
+  "pathT": 0.3,
+  "side": "right",
+  "pages": [
+    {
+      "title": "The Raven's Eye",
+      "description": "A blackwork piece inspired by Nordic mythology. The all-seeing eye of Odin, wrapped in raven feathers."
+    },
+    {
+      "title": "Bone Garden",
+      "description": "Floral skulls intertwined with thorned roses. A reminder that beauty grows from decay."
+    },
+    {
+      "title": "Serpent's Embrace",
+      "description": "An ouroboros design with geometric dotwork patterns. The eternal cycle of creation and destruction."
+    },
+    {
+      "title": "Shadow Forest",
+      "description": "A sleeve concept featuring dead trees silhouetted against a full moon. Blackwork with negative space highlights."
+    }
+  ]
+}

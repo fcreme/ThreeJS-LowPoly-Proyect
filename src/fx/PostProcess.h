@@ -24,6 +24,10 @@ public:
     // SSAO toggle
     void setSSAOEnabled(bool enabled) { m_ssaoEnabled = enabled; }
 
+    // SSAO debug view (F1) — shows raw AO buffer on screen
+    void setSSAODebugView(bool enabled) { m_ssaoDebugView = enabled; }
+    bool getSSAODebugView() const { return m_ssaoDebugView; }
+
 private:
     void createFBO(int width, int height);
     void destroyFBO();
@@ -66,6 +70,7 @@ private:
     GLuint m_noiseTex = 0;
     std::vector<glm::vec3> m_ssaoKernel;
     bool m_ssaoEnabled = true;
+    bool m_ssaoDebugView = false;
     int m_ssaoWidth = 640;
     int m_ssaoHeight = 360;
 

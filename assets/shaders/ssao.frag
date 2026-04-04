@@ -45,8 +45,8 @@ void main() {
     vec3 fragPos = viewPosFromDepth(vTexCoord, depth);
     vec3 normal = reconstructNormal(fragPos, vTexCoord);
 
-    // Random rotation vector from noise texture
-    vec3 randomVec = texture(uNoiseTex, vTexCoord * uNoiseScale).xyz * 2.0 - 1.0;
+    // Random rotation vector from noise texture (already in [-1,1] range, z=0)
+    vec3 randomVec = texture(uNoiseTex, vTexCoord * uNoiseScale).xyz;
 
     // Gram-Schmidt to build TBN
     vec3 tangent = normalize(randomVec - normal * dot(randomVec, normal));
@@ -75,5 +75,6 @@ void main() {
     }
 
     occlusion = 1.0 - (occlusion / float(sampleCount));
-    FragColor = occlusion;
+    // Power curve to intensify AO for dark atmospheric look
+    FragColor = pow(occlusion, 1.5);
 }

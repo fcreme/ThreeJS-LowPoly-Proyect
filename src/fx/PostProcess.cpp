@@ -99,10 +99,12 @@ void PostProcess::generateNoiseTexture() {
     std::mt19937 gen(123);
 
     // 4x4 noise texture (tiled across screen)
+    // Store values already in [-1,1] range for XY, 0 for Z
+    // so that the shader's *2-1 remap produces correct tangent-space rotations
     std::vector<float> noise(4 * 4 * 3);
     for (int i = 0; i < 16; i++) {
-        noise[i * 3 + 0] = dist(gen);
-        noise[i * 3 + 1] = dist(gen);
+        noise[i * 3 + 0] = dist(gen) * 2.0f - 1.0f;
+        noise[i * 3 + 1] = dist(gen) * 2.0f - 1.0f;
         noise[i * 3 + 2] = 0.0f; // rotation around z only
     }
 
@@ -300,6 +302,41 @@ void PostProcess::endAndRender(float time, const glm::mat4& projection) {
         m_ssaoBlurShader.setInt("uSSAO", 0);
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
+    }
+
+    // --- SSAO debug view: render raw AO buffer to screen ---
+    if (m_ssaoDebugView && m_ssaoEnabled && m_ssaoShader.getProgram() != 0) {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, m_width, m_height);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // Re-use the postprocess shader in a minimal way — bind AO as scene color
+        m_shader.use();
+        // Bind blurred SSAO as the scene texture (it's single-channel, will show as grayscale)
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, m_ssaoBlurTex);
+        m_shader.setInt("uScreen", 0);
+
+        // Disable bloom, SSAO multiply, and fog for debug
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, m_ssaoBlurTex); // dummy
+        m_shader.setInt("uBloomTex", 1);
+        m_shader.setFloat("uBloomIntensity", 0.0f);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, m_depthTex);
+        m_shader.setInt("uDepthTex", 2);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, m_ssaoBlurTex);
+        m_shader.setInt("uSSAOTex", 3);
+        m_shader.setInt("uSSAOEnabled", 0); // Don't multiply again
+        m_shader.setInt("uFogEnabled", 0);
+        m_shader.setFloat("uTime", time);
+        m_shader.setVec2("uResolution", static_cast<float>(m_width), static_cast<float>(m_height));
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        glBindVertexArray(0);
+        glEnable(GL_DEPTH_TEST);
+        return; // Skip normal composite
     }
 
     // --- Bloom: brightness extraction ---

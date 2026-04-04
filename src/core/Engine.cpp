@@ -142,6 +142,11 @@ void Engine::processEvents() {
             case SDL_KEYDOWN:
                 m_inputManager->onKeyDown(event.key.keysym.scancode);
                 if (event.key.keysym.sym == SDLK_ESCAPE) m_running = false;
+                if (event.key.keysym.sym == SDLK_F1) {
+                    auto& pp = m_renderer->getPostProcess();
+                    pp.setSSAODebugView(!pp.getSSAODebugView());
+                    std::cout << "SSAO debug view: " << (pp.getSSAODebugView() ? "ON" : "OFF") << "\n";
+                }
                 break;
             case SDL_KEYUP:
                 m_inputManager->onKeyUp(event.key.keysym.scancode);

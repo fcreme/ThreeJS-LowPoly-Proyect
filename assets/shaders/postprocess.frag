@@ -31,7 +31,15 @@ float linearizeDepth(float d, float near, float far) {
 }
 
 void main() {
-    vec3 color = texture(uScreen, vTexCoord).rgb;
+    // --- Chromatic aberration ---
+    // Offset increases toward screen edges for a lens-like distortion
+    vec2 center = vTexCoord - 0.5;
+    float edgeDist = dot(center, center); // squared distance from center
+    float caStrength = edgeDist * 0.008;  // subtle — ramps at edges only
+    vec3 color;
+    color.r = texture(uScreen, vTexCoord + center * caStrength).r;
+    color.g = texture(uScreen, vTexCoord).g;
+    color.b = texture(uScreen, vTexCoord - center * caStrength).b;
 
     // --- SSAO ---
     if (uSSAOEnabled != 0) {
@@ -67,6 +75,13 @@ void main() {
 
     // --- Slight contrast boost ---
     color = (color - 0.5) * 1.1 + 0.5;
+
+    // --- Dithering (eliminates banding in dark gradients) ---
+    // Triangular-distributed dither: smoother than uniform noise
+    float dither1 = rand(vTexCoord * uResolution + vec2(uTime * 37.0));
+    float dither2 = rand(vTexCoord * uResolution + vec2(uTime * 71.0 + 0.5));
+    vec3 dither = vec3((dither1 + dither2 - 1.0) / 255.0);
+    color += dither;
 
     FragColor = vec4(clamp(color, 0.0, 1.0), 1.0);
 }

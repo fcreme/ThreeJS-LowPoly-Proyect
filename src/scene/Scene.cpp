@@ -544,7 +544,13 @@ void Scene::update(float dt, const InputManager& input, Renderer& renderer, Audi
     // Audio: footsteps, reverb, listener position
     if (audio) {
         audio->updateFootsteps(dt, m_playerMoving);
-        audio->setReverb(m_currentRoom.firstPerson, 0.3f, 500.0f);
+        // Softer reverb: first-person rooms (hallways) get subtle echo,
+        // fixed-cam rooms (studios) get minimal reverb
+        if (m_currentRoom.firstPerson) {
+            audio->setReverb(true, 0.15f, 300.0f);
+        } else {
+            audio->setReverb(false, 0.1f, 200.0f);
+        }
 
         // Update listener for spatial audio
         glm::vec3 lookDir = m_player.getLookDirection();

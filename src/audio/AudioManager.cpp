@@ -4,6 +4,11 @@
 #include <iostream>
 #include <algorithm>
 #include <cmath>
+#include <random>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 namespace dw {
 
@@ -81,12 +86,60 @@ bool AudioManager::loadSound(const std::string& name, const std::string& path) {
     return true;
 }
 
-void AudioManager::playSound(const std::string& name) {
+void AudioManager::generateFootstepSound() {
+    const int sampleRate = m_spec.freq;
+    const int channels = m_spec.channels;
+    const float duration = 0.1f; // 100ms
+    const int numFrames = static_cast<int>(sampleRate * duration);
+
+    // Random engine for noise
+    std::mt19937 rng(42); // fixed seed for reproducible sound
+    std::uniform_real_distribution<float> noiseDist(-1.0f, 1.0f);
+
+    // Generate mono samples first
+    std::vector<float> mono(numFrames);
+    for (int i = 0; i < numFrames; i++) {
+        float t = static_cast<float>(i) / sampleRate;
+
+        // Low-frequency thud (90 Hz sine burst with fast decay)
+        float thud = std::sin(2.0f * static_cast<float>(M_PI) * 90.0f * t) * std::exp(-t * 40.0f);
+
+        // Short noise burst for scrape/texture (decays faster)
+        float noise = noiseDist(rng) * std::exp(-t * 60.0f) * 0.3f;
+
+        // Combine with overall envelope
+        mono[i] = (thud + noise) * 0.7f;
+    }
+
+    // Convert to S16 stereo buffer
+    SoundData sound;
+    sound.spec = m_spec;
+    sound.buffer.resize(numFrames * channels * sizeof(Sint16));
+    Sint16* out = reinterpret_cast<Sint16*>(sound.buffer.data());
+    for (int i = 0; i < numFrames; i++) {
+        Sint16 sample = static_cast<Sint16>(std::clamp(mono[i] * 32767.0f, -32768.0f, 32767.0f));
+        for (int c = 0; c < channels; c++) {
+            out[i * channels + c] = sample;
+        }
+    }
+
+    m_sounds["footstep"] = std::move(sound);
+    std::cout << "AudioManager: generated procedural footstep (" << numFrames << " frames)\n";
+}
+
+void AudioManager::playSound(const std::string& name, float volume, float pitch) {
     auto it = m_sounds.find(name);
     if (it == m_sounds.end()) return;
 
     SDL_LockAudioDevice(m_device);
-    m_playing.push_back({&it->second.buffer, 0, 1.0f, 1.0f});
+    PlayingSound ps;
+    ps.buffer = &it->second.buffer;
+    ps.pos = 0;
+    ps.floatPos = 0.0f;
+    ps.volumeL = volume;
+    ps.volumeR = volume;
+    ps.playbackRate = pitch;
+    m_playing.push_back(ps);
     SDL_UnlockAudioDevice(m_device);
 }
 
@@ -114,7 +167,14 @@ void AudioManager::playSoundAt(const std::string& name, const glm::vec3& sourceP
     float volR = volume * std::clamp(1.0f + pan * 0.5f, 0.2f, 1.0f);
 
     SDL_LockAudioDevice(m_device);
-    m_playing.push_back({&it->second.buffer, 0, volL, volR});
+    PlayingSound ps;
+    ps.buffer = &it->second.buffer;
+    ps.pos = 0;
+    ps.floatPos = 0.0f;
+    ps.volumeL = volL;
+    ps.volumeR = volR;
+    ps.playbackRate = 1.0f;
+    m_playing.push_back(ps);
     SDL_UnlockAudioDevice(m_device);
 }
 
@@ -161,7 +221,13 @@ void AudioManager::stopAmbient() { m_ambientPlaying = false; }
 void AudioManager::setAmbientVolume(float vol) { m_ambientVolume = std::clamp(vol, 0.0f, 1.0f); }
 
 void AudioManager::playFootstep() {
-    playSound("footstep");
+    static std::mt19937 rng(std::random_device{}());
+    static std::uniform_real_distribution<float> volDist(0.35f, 0.55f);
+    static std::uniform_real_distribution<float> pitchDist(0.85f, 1.15f);
+
+    float vol = volDist(rng);
+    float pitch = pitchDist(rng);
+    playSound("footstep", vol, pitch);
 }
 
 void AudioManager::updateFootsteps(float dt, bool isMoving) {
@@ -216,32 +282,41 @@ void AudioManager::mixAudio(Uint8* stream, int len) {
         }
     }
 
-    // Mix one-shot sounds (with per-sound spatial volume)
-    for (auto it = m_playing.begin(); it != m_playing.end();) {
-        int remaining = static_cast<int>(it->buffer->size() - it->pos);
-        int toMix = std::min(len, remaining);
+    // Mix one-shot sounds (with per-sound volume and pitch variation)
+    const int outFrames = len / (m_spec.channels * sizeof(Sint16));
+    Sint16* dst = reinterpret_cast<Sint16*>(stream);
 
-        // Apply spatial volume per-sample (stereo interleaved: L R L R ...)
-        if (m_spec.channels == 2 && (it->volumeL < 0.99f || it->volumeR < 0.99f)) {
-            // Mix with spatial panning
-            int numFrames = toMix / (2 * sizeof(Sint16));
-            const Sint16* src = reinterpret_cast<const Sint16*>(it->buffer->data() + it->pos);
-            Sint16* dst = reinterpret_cast<Sint16*>(stream);
-            for (int f = 0; f < numFrames; f++) {
-                dst[f * 2] = static_cast<Sint16>(std::clamp(
-                    static_cast<int>(dst[f * 2]) + static_cast<int>(src[f * 2] * it->volumeL * 0.5f),
-                    -32768, 32767));
-                dst[f * 2 + 1] = static_cast<Sint16>(std::clamp(
-                    static_cast<int>(dst[f * 2 + 1]) + static_cast<int>(src[f * 2 + 1] * it->volumeR * 0.5f),
-                    -32768, 32767));
+    for (auto it = m_playing.begin(); it != m_playing.end();) {
+        const Sint16* src = reinterpret_cast<const Sint16*>(it->buffer->data());
+        const int srcTotalFrames = static_cast<int>(it->buffer->size()) / (m_spec.channels * sizeof(Sint16));
+        bool done = false;
+
+        for (int f = 0; f < outFrames && !done; f++) {
+            int idx0 = static_cast<int>(it->floatPos);
+            if (idx0 >= srcTotalFrames - 1) { done = true; break; }
+
+            float frac = it->floatPos - static_cast<float>(idx0);
+            int idx1 = std::min(idx0 + 1, srcTotalFrames - 1);
+
+            for (int c = 0; c < m_spec.channels; c++) {
+                // Linear interpolation between adjacent frames
+                float s0 = static_cast<float>(src[idx0 * m_spec.channels + c]);
+                float s1 = static_cast<float>(src[idx1 * m_spec.channels + c]);
+                float sample = s0 + (s1 - s0) * frac;
+
+                // Apply volume (L/R)
+                float vol = (c == 0) ? it->volumeL : it->volumeR;
+                sample *= vol;
+
+                // Mix into output
+                int mixed = static_cast<int>(dst[f * m_spec.channels + c]) + static_cast<int>(sample);
+                dst[f * m_spec.channels + c] = static_cast<Sint16>(std::clamp(mixed, -32768, 32767));
             }
-        } else {
-            SDL_MixAudioFormat(stream, it->buffer->data() + it->pos,
-                               m_spec.format, toMix, SDL_MIX_MAXVOLUME / 2);
+
+            it->floatPos += it->playbackRate;
         }
 
-        it->pos += toMix;
-        if (it->pos >= it->buffer->size()) {
+        if (done || it->floatPos >= static_cast<float>(srcTotalFrames - 1)) {
             it = m_playing.erase(it);
         } else {
             ++it;

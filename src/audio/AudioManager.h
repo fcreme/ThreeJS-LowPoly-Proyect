@@ -19,8 +19,8 @@ public:
     // Load a WAV file and store it by name
     bool loadSound(const std::string& name, const std::string& path);
 
-    // Play a sound (one-shot, full volume centered)
-    void playSound(const std::string& name);
+    // Play a sound (one-shot, with optional volume and pitch)
+    void playSound(const std::string& name, float volume = 1.0f, float pitch = 1.0f);
 
     // Play a sound with spatial positioning (volume attenuated by distance, stereo panned)
     void playSoundAt(const std::string& name, const glm::vec3& sourcePos);
@@ -35,6 +35,7 @@ public:
     void setAmbientVolume(float vol); // 0..1
 
     // Footsteps
+    void generateFootstepSound(); // procedural soft stone footstep
     void playFootstep();
     void setFootstepInterval(float seconds) { m_footstepInterval = seconds; }
     void updateFootsteps(float dt, bool isMoving);
@@ -66,8 +67,10 @@ private:
     struct PlayingSound {
         const std::vector<Uint8>* buffer;
         size_t pos;
-        float volumeL = 1.0f;  // left channel volume (for spatial)
-        float volumeR = 1.0f;  // right channel volume
+        float floatPos = 0.0f;   // fractional position for pitch-shifted playback
+        float volumeL = 1.0f;    // left channel volume (for spatial)
+        float volumeR = 1.0f;    // right channel volume
+        float playbackRate = 1.0f; // pitch variation (1.0 = normal)
     };
     std::vector<PlayingSound> m_playing;
 
@@ -78,7 +81,7 @@ private:
 
     // Footsteps
     float m_footstepTimer = 0.0f;
-    float m_footstepInterval = 0.4f;
+    float m_footstepInterval = 0.5f;
 
     // Reverb delay line
     bool m_reverbEnabled = false;

@@ -79,8 +79,8 @@ bool Engine::init(const std::string& title, int width, int height) {
         std::cerr << "Audio init failed (continuing without audio)\n";
         m_audio.reset();
     } else {
-        // Load footstep sound (ambient is loaded per-room)
-        m_audio->loadSound("footstep", "assets/audio/footstep.wav");
+        // Generate procedural footstep (soft stone-floor thud)
+        m_audio->generateFootstepSound();
     }
 
     // Renderer

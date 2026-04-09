@@ -31,5 +31,17 @@
             "speed": 0.3,
             "base_size": 3.0
         }
+    ],
+    "fmv_overlays": [
+        {
+            "type": "fire_glow",
+            "position": [0.2, 0.1],
+            "scale": [0.4, 0.4],
+            "alpha": 0.4,
+            "speed": 1.8,
+            "frame_count": 4,
+            "additive": true,
+            "tint": [1.0, 0.8, 0.4]
+        }
     ]
 }

@@ -186,7 +186,10 @@ void Engine::render() {
     // 3. Pre-rendered background (depth write off)
     m_renderer->renderBackground();
 
-    // 4. Depth pre-pass (hidden geometry for occlusion)
+    // 4. FMV overlays (animated atmospheric effects on background)
+    m_scene->renderFMVOverlays();
+
+    // 5. Depth pre-pass (hidden geometry for occlusion)
     m_renderer->renderDepthPrePass(*m_scene, m_scene->getCamera());
 
     // 5. Bind shadow map + render 3D objects

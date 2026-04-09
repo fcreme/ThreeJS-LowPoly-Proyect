@@ -8,6 +8,7 @@
 #include "renderer/Shader.h"
 #include "renderer/Model.h"
 #include "fx/ParticleSystem.h"
+#include "fx/FMVOverlay.h"
 #include "world/Player.h"
 #include "world/Book.h"
 
@@ -39,6 +40,7 @@ public:
     bool loadRoom(const std::string& roomDefPath, Renderer& renderer);
     void update(float dt, const InputManager& input, Renderer& renderer, AudioManager* audio, UIOverlay* ui);
     void renderObjects();
+    void renderFMVOverlays();
     void renderParticles();
     void renderOverlays();
     void renderUI(UIOverlay& ui, int screenWidth, int screenHeight);
@@ -62,6 +64,7 @@ private:
     Player m_player;
     RoomTransition m_transition;
     ParticleSystem m_particles;
+    std::vector<FMVOverlay> m_fmvOverlays;
 
     struct PropInstance {
         Mesh mesh;

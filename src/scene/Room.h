@@ -33,6 +33,19 @@ struct ParticleEmitterDef {
     float baseSize = 3.0f;
 };
 
+struct FMVOverlayDef {
+    std::string type;           // "fog", "fire_glow", "light_shaft", "custom"
+    std::string imagePath;      // sprite sheet path (empty = procedural)
+    glm::vec2 position{0.0f};  // NDC offset
+    glm::vec2 scale{1.0f};     // NDC scale
+    float alpha = 0.5f;
+    float speed = 1.0f;        // animation speed multiplier
+    int frameCount = 1;         // sprite sheet frames
+    bool additive = false;      // additive vs alpha blend
+    glm::vec2 scrollSpeed{0.0f}; // UV scroll per second
+    glm::vec3 tint{1.0f};      // color tint
+};
+
 struct RoomDef {
     std::string name;
     std::string backgroundPath;
@@ -58,6 +71,9 @@ struct RoomDef {
 
     // Particles
     std::vector<ParticleEmitterDef> particles;
+
+    // FMV overlays (animated atmospheric effects on background)
+    std::vector<FMVOverlayDef> fmvOverlays;
 };
 
 bool loadRoomDef(const std::string& path, RoomDef& out);

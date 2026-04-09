@@ -85,5 +85,38 @@
             "speed": 0.3,
             "base_size": 15.0
         }
+    ],
+    "fmv_overlays": [
+        {
+            "type": "fire_glow",
+            "position": [-0.75, 0.4],
+            "scale": [0.3, 0.3],
+            "alpha": 0.6,
+            "speed": 2.0,
+            "frame_count": 4,
+            "additive": true,
+            "tint": [1.0, 0.7, 0.3]
+        },
+        {
+            "type": "fire_glow",
+            "position": [0.75, 0.4],
+            "scale": [0.3, 0.3],
+            "alpha": 0.6,
+            "speed": 2.2,
+            "frame_count": 4,
+            "additive": true,
+            "tint": [1.0, 0.7, 0.3]
+        },
+        {
+            "type": "fog",
+            "position": [0.0, -0.7],
+            "scale": [2.0, 0.5],
+            "alpha": 0.15,
+            "speed": 1.0,
+            "frame_count": 4,
+            "scroll_speed": [0.05, 0.01],
+            "additive": false,
+            "tint": [0.6, 0.65, 0.7]
+        }
     ]
 }

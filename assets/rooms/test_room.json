@@ -40,5 +40,28 @@
             "speed": 0.3,
             "base_size": 12.0
         }
+    ],
+    "fmv_overlays": [
+        {
+            "type": "fog",
+            "position": [0.0, -0.5],
+            "scale": [2.0, 0.6],
+            "alpha": 0.12,
+            "speed": 0.8,
+            "frame_count": 4,
+            "scroll_speed": [0.03, 0.005],
+            "additive": false,
+            "tint": [0.7, 0.75, 0.8]
+        },
+        {
+            "type": "fire_glow",
+            "position": [0.0, 0.3],
+            "scale": [0.5, 0.5],
+            "alpha": 0.25,
+            "speed": 1.5,
+            "frame_count": 4,
+            "additive": true,
+            "tint": [1.0, 0.85, 0.5]
+        }
     ]
 }

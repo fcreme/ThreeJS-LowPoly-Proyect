@@ -62,6 +62,7 @@ bool Scene::loadRoom(const std::string& roomDefPath, Renderer& renderer) {
     m_triggers.clear();
     m_pointLights.clear();
     m_particles.clear();
+    m_fmvOverlays.clear();
     m_books.clear();
     m_nearBookIndex = -1;
     m_activeBook = nullptr;
@@ -474,6 +475,14 @@ bool Scene::loadRoom(const std::string& roomDefPath, Renderer& renderer) {
         m_particles.addEmitter(e);
     }
 
+    // Spawn FMV overlays from room JSON
+    FMVOverlay::initShared();
+    for (const auto& fdef : m_currentRoom.fmvOverlays) {
+        FMVOverlay overlay;
+        overlay.loadFromDef(fdef);
+        m_fmvOverlays.push_back(std::move(overlay));
+    }
+
     // Load depth pre-pass geometry (hidden geometry for occlusion)
     if (!m_currentRoom.depthGeometryPath.empty()) {
         m_depthGeometry = std::make_unique<Model>();
@@ -495,7 +504,8 @@ bool Scene::loadRoom(const std::string& roomDefPath, Renderer& renderer) {
 
     std::cout << "Scene: room '" << m_currentRoom.name << "' loaded — "
               << m_props.size() << " props, " << m_pointLights.size() << " lights, "
-              << m_triggers.size() << " triggers, " << m_books.size() << " books"
+              << m_triggers.size() << " triggers, " << m_books.size() << " books, "
+              << m_fmvOverlays.size() << " FMV overlays"
               << (m_currentRoom.firstPerson ? " [FP]" : " [Fixed]") << "\n";
     return true;
 }
@@ -529,6 +539,7 @@ void Scene::update(float dt, const InputManager& input, Renderer& renderer, Audi
 
     m_propTime += dt;
     m_particles.update(dt);
+    for (auto& overlay : m_fmvOverlays) overlay.update(dt);
 
     // Audio: footsteps, reverb, listener position
     if (audio) {
@@ -693,6 +704,16 @@ void Scene::renderObjects() {
     }
 }
 
+void Scene::renderFMVOverlays() {
+    if (m_fmvOverlays.empty()) return;
+
+    glDisable(GL_DEPTH_TEST);
+    for (auto& overlay : m_fmvOverlays) {
+        overlay.render();
+    }
+    glEnable(GL_DEPTH_TEST);
+}
+
 void Scene::renderParticles() {
     m_particles.render(m_camera.getView(), m_camera.getProjection());
 }
@@ -828,6 +849,8 @@ GLuint Scene::generateProceduralArt(int seed, int width, int height) {
 
 void Scene::shutdown() {
     m_particles.shutdown();
+    m_fmvOverlays.clear();
+    FMVOverlay::shutdownShared();
     m_transition.shutdown();
     m_props.clear();
     m_triggers.clear();

@@ -4,11 +4,16 @@ in vec3 vWorldPos;
 in vec3 vNormal;
 in vec2 vTexCoord;
 in vec4 vFragPosLightSpace;
+in mat3 vTBN;
 
 out vec4 FragColor;
 
 uniform sampler2D uDiffuse;
 uniform bool uHasTexture;
+
+// Normal mapping
+uniform sampler2D uNormalMap;
+uniform int uHasNormalMap;
 
 // Directional light
 uniform vec3 uLightDir;
@@ -31,6 +36,9 @@ uniform vec3 uViewPos;
 // Material roughness (0 = mirror, 1 = matte)
 uniform float uRoughness;
 
+// Emissive
+uniform vec3 uEmissive;
+
 // Interaction highlight (0 = none, 1 = full glow)
 uniform float uHighlight;
 
@@ -38,7 +46,7 @@ uniform float uHighlight;
 uniform sampler2D uShadowMap;
 uniform int uUseShadows;
 
-float calculateShadow(vec4 fragPosLightSpace) {
+float calculateShadow(vec4 fragPosLightSpace, vec3 normal) {
     // Perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
@@ -50,7 +58,6 @@ float calculateShadow(vec4 fragPosLightSpace) {
     float currentDepth = projCoords.z;
 
     // Bias based on surface angle to light, scaled by texel size
-    vec3 normal = normalize(vNormal);
     vec3 lightDir = normalize(-uLightDir);
     float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.0005);
 
@@ -78,8 +85,16 @@ float calculateShadow(vec4 fragPosLightSpace) {
 }
 
 void main() {
-    vec3 normal = normalize(vNormal);
+    // Determine surface normal (with or without normal map)
+    vec3 normal;
+    if (uHasNormalMap != 0) {
+        vec3 mapNormal = texture(uNormalMap, vTexCoord).rgb * 2.0 - 1.0;
+        normal = normalize(vTBN * mapNormal);
+    } else {
+        normal = normalize(vNormal);
+    }
     if (!gl_FrontFacing) normal = -normal; // flip normal for back-faces (interior walls)
+
     vec3 lightDir = normalize(-uLightDir);
 
     // Base color
@@ -102,7 +117,7 @@ void main() {
     // Shadow attenuation on directional light
     float shadow = 0.0;
     if (uUseShadows != 0) {
-        shadow = calculateShadow(vFragPosLightSpace);
+        shadow = calculateShadow(vFragPosLightSpace, normal);
     }
 
     vec3 result = uAmbient * baseColor
@@ -126,6 +141,9 @@ void main() {
 
         result += atten * (ndotl * uPointLightColor[i] * baseColor + ptSpec * uPointLightColor[i] * 0.15);
     }
+
+    // Emissive contribution (adds directly, feeds bloom naturally)
+    result += uEmissive;
 
     // Interaction highlight: emissive rim glow
     if (uHighlight > 0.0) {

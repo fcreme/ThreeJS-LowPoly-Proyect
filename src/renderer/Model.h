@@ -28,8 +28,10 @@ private:
     struct SubMesh {
         Mesh mesh;
         Texture texture;
+        Texture normalMap;
         glm::vec3 baseColor{1.0f};
         float roughness = 0.5f;  // 0 = mirror, 1 = matte
+        glm::vec3 emissive{0.0f};
     };
     std::vector<std::unique_ptr<SubMesh>> m_submeshes;
 };

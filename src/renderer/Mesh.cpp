@@ -71,30 +71,34 @@ void Mesh::setupBuffers(const std::vector<Vertex>& vertices, const std::vector<u
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texcoord));
 
+    // Tangent (location 3)
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
+
     glBindVertexArray(0);
 }
 
 Mesh Mesh::createCube(float size) {
     float h = size * 0.5f;
     std::vector<Vertex> verts = {
-        // Front
-        {{-h, -h,  h}, {0,0,1}, {0,0}}, {{ h, -h,  h}, {0,0,1}, {1,0}},
-        {{ h,  h,  h}, {0,0,1}, {1,1}}, {{-h,  h,  h}, {0,0,1}, {0,1}},
-        // Back
-        {{ h, -h, -h}, {0,0,-1}, {0,0}}, {{-h, -h, -h}, {0,0,-1}, {1,0}},
-        {{-h,  h, -h}, {0,0,-1}, {1,1}}, {{ h,  h, -h}, {0,0,-1}, {0,1}},
-        // Top
-        {{-h,  h,  h}, {0,1,0}, {0,0}}, {{ h,  h,  h}, {0,1,0}, {1,0}},
-        {{ h,  h, -h}, {0,1,0}, {1,1}}, {{-h,  h, -h}, {0,1,0}, {0,1}},
-        // Bottom
-        {{-h, -h, -h}, {0,-1,0}, {0,0}}, {{ h, -h, -h}, {0,-1,0}, {1,0}},
-        {{ h, -h,  h}, {0,-1,0}, {1,1}}, {{-h, -h,  h}, {0,-1,0}, {0,1}},
-        // Right
-        {{ h, -h,  h}, {1,0,0}, {0,0}}, {{ h, -h, -h}, {1,0,0}, {1,0}},
-        {{ h,  h, -h}, {1,0,0}, {1,1}}, {{ h,  h,  h}, {1,0,0}, {0,1}},
-        // Left
-        {{-h, -h, -h}, {-1,0,0}, {0,0}}, {{-h, -h,  h}, {-1,0,0}, {1,0}},
-        {{-h,  h,  h}, {-1,0,0}, {1,1}}, {{-h,  h, -h}, {-1,0,0}, {0,1}},
+        // Front  (normal +Z, tangent +X)
+        {{-h, -h,  h}, {0,0,1}, {0,0}, {1,0,0}}, {{ h, -h,  h}, {0,0,1}, {1,0}, {1,0,0}},
+        {{ h,  h,  h}, {0,0,1}, {1,1}, {1,0,0}}, {{-h,  h,  h}, {0,0,1}, {0,1}, {1,0,0}},
+        // Back   (normal -Z, tangent -X)
+        {{ h, -h, -h}, {0,0,-1}, {0,0}, {-1,0,0}}, {{-h, -h, -h}, {0,0,-1}, {1,0}, {-1,0,0}},
+        {{-h,  h, -h}, {0,0,-1}, {1,1}, {-1,0,0}}, {{ h,  h, -h}, {0,0,-1}, {0,1}, {-1,0,0}},
+        // Top    (normal +Y, tangent +X)
+        {{-h,  h,  h}, {0,1,0}, {0,0}, {1,0,0}}, {{ h,  h,  h}, {0,1,0}, {1,0}, {1,0,0}},
+        {{ h,  h, -h}, {0,1,0}, {1,1}, {1,0,0}}, {{-h,  h, -h}, {0,1,0}, {0,1}, {1,0,0}},
+        // Bottom (normal -Y, tangent +X)
+        {{-h, -h, -h}, {0,-1,0}, {0,0}, {1,0,0}}, {{ h, -h, -h}, {0,-1,0}, {1,0}, {1,0,0}},
+        {{ h, -h,  h}, {0,-1,0}, {1,1}, {1,0,0}}, {{-h, -h,  h}, {0,-1,0}, {0,1}, {1,0,0}},
+        // Right  (normal +X, tangent +Z)
+        {{ h, -h,  h}, {1,0,0}, {0,0}, {0,0,-1}}, {{ h, -h, -h}, {1,0,0}, {1,0}, {0,0,-1}},
+        {{ h,  h, -h}, {1,0,0}, {1,1}, {0,0,-1}}, {{ h,  h,  h}, {1,0,0}, {0,1}, {0,0,-1}},
+        // Left   (normal -X, tangent +Z)
+        {{-h, -h, -h}, {-1,0,0}, {0,0}, {0,0,1}}, {{-h, -h,  h}, {-1,0,0}, {1,0}, {0,0,1}},
+        {{-h,  h,  h}, {-1,0,0}, {1,1}, {0,0,1}}, {{-h,  h, -h}, {-1,0,0}, {0,1}, {0,0,1}},
     };
     std::vector<uint32_t> idx;
     for (uint32_t face = 0; face < 6; face++) {
@@ -109,8 +113,8 @@ Mesh Mesh::createCube(float size) {
 Mesh Mesh::createPlane(float width, float depth) {
     float hw = width * 0.5f, hd = depth * 0.5f;
     std::vector<Vertex> verts = {
-        {{-hw, 0, -hd}, {0,1,0}, {0,0}}, {{ hw, 0, -hd}, {0,1,0}, {1,0}},
-        {{ hw, 0,  hd}, {0,1,0}, {1,1}}, {{-hw, 0,  hd}, {0,1,0}, {0,1}},
+        {{-hw, 0, -hd}, {0,1,0}, {0,0}, {1,0,0}}, {{ hw, 0, -hd}, {0,1,0}, {1,0}, {1,0,0}},
+        {{ hw, 0,  hd}, {0,1,0}, {1,1}, {1,0,0}}, {{-hw, 0,  hd}, {0,1,0}, {0,1}, {1,0,0}},
     };
     std::vector<uint32_t> idx = {0, 1, 2, 0, 2, 3};
     Mesh m;

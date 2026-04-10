@@ -191,6 +191,7 @@ bool Scene::loadRoom(const std::string& roomDefPath, Renderer& renderer) {
             l->transform = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(lp.x, lp.y, lp.z)), glm::vec3(0.3f, 0.5f, 0.3f));
             l->materialColor = glm::vec3(0.6f, 0.4f, 0.1f);
             l->roughness = 0.2f; // polished bronze
+            l->emissive = glm::vec3(0.3f, 0.2f, 0.05f); // subtle warm self-illumination
             m_props.push_back(std::move(l));
         }
 
@@ -421,6 +422,7 @@ bool Scene::loadRoom(const std::string& roomDefPath, Renderer& renderer) {
         candle->transform = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.6f, 0.48f, -2.0f)), glm::vec3(0.03f, 0.1f, 0.03f));
         candle->materialColor = glm::vec3(0.9f, 0.85f, 0.7f); // white-ish wax
         candle->roughness = 0.3f; // waxy surface
+        candle->emissive = glm::vec3(1.5f, 1.1f, 0.5f); // warm glow, >1.0 triggers bloom
         m_props.push_back(std::move(candle));
 
         m_pointLights.push_back({{0.6f, 0.6f, -2.0f}, {1.0f, 0.8f, 0.4f}, 6.0f, 6.0f, true});
@@ -702,6 +704,8 @@ void Scene::renderObjects() {
             glEnable(GL_CULL_FACE);
         } else {
             m_meshShader.setVec3("uMaterialColor", prop->materialColor.x, prop->materialColor.y, prop->materialColor.z);
+            m_meshShader.setVec3("uEmissive", prop->emissive.x, prop->emissive.y, prop->emissive.z);
+            m_meshShader.setInt("uHasNormalMap", 0);
 
             bool hasTex = prop->texture.getID() != 0;
             m_meshShader.setInt("uHasTexture", hasTex ? 1 : 0);
@@ -718,6 +722,8 @@ void Scene::renderObjects() {
     if (!m_currentRoom.firstPerson) {
         m_meshShader.setVec3("uMaterialColor", 0.6f, 0.3f, 0.2f);
         m_meshShader.setInt("uHasTexture", 0);
+        m_meshShader.setVec3("uEmissive", 0.0f, 0.0f, 0.0f);
+        m_meshShader.setInt("uHasNormalMap", 0);
         m_player.render(m_meshShader);
     }
 }

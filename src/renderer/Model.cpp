@@ -73,6 +73,11 @@ bool Model::load(const std::string& path) {
 
             if (aiM->mTextureCoords[0])
                 vertices[v].texcoord = glm::vec2(aiM->mTextureCoords[0][v].x, aiM->mTextureCoords[0][v].y);
+
+            if (aiM->mTangents)
+                vertices[v].tangent = glm::vec3(aiM->mTangents[v].x, aiM->mTangents[v].y, aiM->mTangents[v].z);
+            else
+                vertices[v].tangent = glm::vec3(1.0f, 0.0f, 0.0f);
         }
 
         // Indices
@@ -140,6 +145,40 @@ bool Model::load(const std::string& path) {
                     submesh->texture.load(resolved);
                 }
             }
+
+            // Normal map (try NORMALS first, then HEIGHT as fallback)
+            auto loadNormalMap = [&](aiTextureType type) -> bool {
+                if (mat->GetTextureCount(type) > 0) {
+                    aiString texPath;
+                    mat->GetTexture(type, 0, &texPath);
+                    std::string tp(texPath.C_Str());
+                    if (!tp.empty() && tp[0] == '*') {
+                        unsigned int texIdx = std::stoi(tp.substr(1));
+                        if (texIdx < scene->mNumTextures) {
+                            // Load a copy from memory for normal map
+                            const aiTexture* aiTex = scene->mTextures[texIdx];
+                            if (aiTex->mHeight == 0) {
+                                submesh->normalMap.loadFromMemory(
+                                    reinterpret_cast<const unsigned char*>(aiTex->pcData),
+                                    static_cast<int>(aiTex->mWidth));
+                            }
+                        }
+                    } else {
+                        std::string resolved = resolveTexturePath(modelDir, texPath);
+                        submesh->normalMap.load(resolved);
+                    }
+                    return submesh->normalMap.getID() != 0;
+                }
+                return false;
+            };
+            if (!loadNormalMap(aiTextureType_NORMALS))
+                loadNormalMap(aiTextureType_HEIGHT);
+
+            // Emissive color
+            aiColor4D emissiveColor;
+            if (mat->Get(AI_MATKEY_COLOR_EMISSIVE, emissiveColor) == AI_SUCCESS) {
+                submesh->emissive = glm::vec3(emissiveColor.r, emissiveColor.g, emissiveColor.b);
+            }
         }
 
         m_submeshes.push_back(std::move(submesh));
@@ -159,6 +198,18 @@ void Model::draw(Shader& shader) const {
             sub->texture.bind(GL_TEXTURE0);
             shader.setInt("uDiffuse", 0);
         }
+
+        // Normal map
+        bool hasNormal = sub->normalMap.getID() != 0;
+        shader.setInt("uHasNormalMap", hasNormal ? 1 : 0);
+        if (hasNormal) {
+            sub->normalMap.bind(GL_TEXTURE2);
+            shader.setInt("uNormalMap", 2);
+        }
+
+        // Emissive
+        shader.setVec3("uEmissive", sub->emissive.x, sub->emissive.y, sub->emissive.z);
+
         sub->mesh.draw();
     }
 }

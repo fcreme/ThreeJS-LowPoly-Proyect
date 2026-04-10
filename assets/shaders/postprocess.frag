@@ -88,6 +88,14 @@ void main() {
     // --- Contrast boost (applied globally to avoid 3D/background seam) ---
     color = (color - 0.5) * 1.15 + 0.5;
 
+    // --- ACES filmic tone mapping ---
+    // Preserves highlight rolloff and cinematic contrast from HDR values
+    {
+        vec3 x = color;
+        float a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14;
+        color = clamp((x*(a*x+b)) / (x*(c*x+d)+e), 0.0, 1.0);
+    }
+
     // --- Dithering (eliminates banding in dark gradients) ---
     // Triangular-distributed dither scaled to one 8-bit LSB (1/255)
     float dither1 = rand(floor(vTexCoord * uResolution) + vec2(floor(uTime * 4.0) * 37.0));

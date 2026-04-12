@@ -55,7 +55,18 @@ void Player::update(float dt, const InputManager& input, const Camera& camera) {
         movement.z -= rightZ * m_moveSpeed * dt;
     }
 
-    m_position += movement;
+    // Try X and Z movement separately for slide-along-wall collision
+    float newX = m_position.x + movement.x;
+    float newZ = m_position.z + movement.z;
+
+    // Test X axis
+    if (!collidesWithAny(newX, m_position.z)) {
+        m_position.x = newX;
+    }
+    // Test Z axis
+    if (!collidesWithAny(m_position.x, newZ)) {
+        m_position.z = newZ;
+    }
 
     // Clamp to world bounds
     m_position.x = std::clamp(m_position.x, m_boundsMinX, m_boundsMaxX);
@@ -100,6 +111,25 @@ void Player::setWorldBounds(float minX, float maxX, float minZ, float maxZ) {
     m_boundsMaxX = maxX;
     m_boundsMinZ = minZ;
     m_boundsMaxZ = maxZ;
+}
+
+void Player::setCollisionBoxes(const std::vector<CollisionBox>& boxes) {
+    m_collisionBoxes = boxes;
+}
+
+bool Player::collidesWithAny(float x, float z) const {
+    // Player is a circle with PLAYER_RADIUS on the XZ plane
+    // Test against each AABB using closest-point distance
+    for (const auto& box : m_collisionBoxes) {
+        float closestX = std::clamp(x, box.min.x, box.max.x);
+        float closestZ = std::clamp(z, box.min.y, box.max.y);
+        float dx = x - closestX;
+        float dz = z - closestZ;
+        if (dx * dx + dz * dz < PLAYER_RADIUS * PLAYER_RADIUS) {
+            return true;
+        }
+    }
+    return false;
 }
 
 } // namespace dw

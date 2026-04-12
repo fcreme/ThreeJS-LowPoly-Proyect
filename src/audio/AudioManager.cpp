@@ -244,9 +244,15 @@ void AudioManager::updateFootsteps(float dt, bool isMoving) {
 }
 
 void AudioManager::setReverb(bool enabled, float feedback, float delayMs) {
+    // Early-return if nothing changed — avoids SDL lock overhead
+    if (enabled == m_reverbEnabled && feedback == m_reverbFeedback && delayMs == m_reverbDelayMs) {
+        return;
+    }
+
     SDL_LockAudioDevice(m_device);
     m_reverbEnabled = enabled;
     m_reverbFeedback = std::clamp(feedback, 0.0f, 0.8f);
+    m_reverbDelayMs = delayMs;
     size_t newDelay = static_cast<size_t>(m_spec.freq * (delayMs / 1000.0f)) * m_spec.channels;
     if (newDelay != m_reverbDelaySamples) {
         m_reverbDelaySamples = newDelay;

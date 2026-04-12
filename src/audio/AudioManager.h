@@ -83,9 +83,10 @@ private:
     float m_footstepTimer = 0.0f;
     float m_footstepInterval = 0.5f;
 
-    // Reverb delay line
+    // Reverb delay line (+ cached params for early-return)
     bool m_reverbEnabled = false;
     float m_reverbFeedback = 0.3f;
+    float m_reverbDelayMs = 500.0f;
     std::vector<float> m_reverbBuffer;
     size_t m_reverbPos = 0;
     size_t m_reverbDelaySamples = 22050; // 0.5s at 44.1kHz

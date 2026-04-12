@@ -155,8 +155,6 @@ bool Scene::loadRoom(const std::string& roomDefPath, Renderer& renderer) {
             m_books.push_back(std::move(b));
         }
 
-        m_player.setWorldBounds(-4.0f, 4.0f, -4.5f, 4.0f);
-
         // Fog params for outdoor forest (lighter, farther)
         // Exponential fog: uFogStart=density, uFogEnd=max distance
         renderer.getPostProcess().setFogParams(
@@ -309,8 +307,6 @@ bool Scene::loadRoom(const std::string& roomDefPath, Renderer& renderer) {
             m_books.push_back(std::move(b));
         }
 
-        m_player.setWorldBounds(-6.0f, 6.0f, -13.0f, 15.0f);
-
         // Exponential fog: uFogStart=density, uFogEnd=max distance
         renderer.getPostProcess().setFogParams(
             glm::vec3(0.02f, 0.02f, 0.04f), 4.0f, 40.0f, 0.1f, 100.0f);
@@ -456,8 +452,6 @@ bool Scene::loadRoom(const std::string& roomDefPath, Renderer& renderer) {
             m_books.push_back(std::move(b));
         }
 
-        m_player.setWorldBounds(-3.5f, 3.5f, -3.5f, 3.5f);
-
         // Intimate fog — close, warm
         // Exponential fog: uFogStart=density, uFogEnd=max distance
         renderer.getPostProcess().setFogParams(
@@ -490,6 +484,11 @@ bool Scene::loadRoom(const std::string& roomDefPath, Renderer& renderer) {
         m_fmvOverlays.push_back(std::move(overlay));
     }
 
+    // Set player world bounds and collision boxes from room definition
+    m_player.setWorldBounds(m_currentRoom.boundsMinX, m_currentRoom.boundsMaxX,
+                            m_currentRoom.boundsMinZ, m_currentRoom.boundsMaxZ);
+    m_player.setCollisionBoxes(m_currentRoom.collisionBoxes);
+
     // Load depth pre-pass geometry (hidden geometry for occlusion)
     if (!m_currentRoom.depthGeometryPath.empty()) {
         m_depthGeometry = std::make_unique<Model>();
@@ -507,6 +506,13 @@ bool Scene::loadRoom(const std::string& roomDefPath, Renderer& renderer) {
         m_audio->stopAmbient();
         m_audio->loadAmbient(m_currentRoom.ambientAudioPath);
         m_audio->playAmbient();
+    }
+
+    // Set reverb from room definition (once per room load, not per frame)
+    if (m_audio) {
+        m_audio->setReverb(m_currentRoom.reverb.enabled,
+                           m_currentRoom.reverb.feedback,
+                           m_currentRoom.reverb.delayMs);
     }
 
     std::cout << "Scene: room '" << m_currentRoom.name << "' loaded — "
@@ -538,7 +544,7 @@ void Scene::update(float dt, const InputManager& input, Renderer& renderer, Audi
 
     // Camera update: FP or fixed
     if (m_currentRoom.firstPerson) {
-        float eyeHeight = 3.0f + m_player.getHeadBob();
+        float eyeHeight = m_currentRoom.eyeHeight + m_player.getHeadBob();
         m_camera.updateFromPlayer(m_player.getPosition(), eyeHeight,
                                   m_player.getSmoothYaw(), m_player.getSmoothPitch());
     }
@@ -551,13 +557,6 @@ void Scene::update(float dt, const InputManager& input, Renderer& renderer, Audi
     // Audio: footsteps, reverb, listener position
     if (audio) {
         audio->updateFootsteps(dt, m_playerMoving);
-        // Softer reverb: first-person rooms (hallways) get subtle echo,
-        // fixed-cam rooms (studios) get minimal reverb
-        if (m_currentRoom.firstPerson) {
-            audio->setReverb(true, 0.15f, 300.0f);
-        } else {
-            audio->setReverb(false, 0.1f, 200.0f);
-        }
 
         // Update listener for spatial audio
         glm::vec3 lookDir = m_player.getLookDirection();

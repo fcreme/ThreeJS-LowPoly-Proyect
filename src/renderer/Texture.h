@@ -21,7 +21,7 @@ public:
     void destroy();
 
     GLuint getID() const { return m_id; }
-    void setID(GLuint id) { m_id = id; }  // for injecting procedurally generated textures
+    void setID(GLuint id) { destroy(); m_id = id; }  // for injecting procedurally generated textures
     int getWidth() const { return m_width; }
     int getHeight() const { return m_height; }
 

@@ -2,6 +2,7 @@
 
 #include "renderer/Mesh.h"
 #include "renderer/Shader.h"
+#include "scene/Room.h"
 #include <glm/glm.hpp>
 
 namespace dw {
@@ -35,8 +36,10 @@ public:
 
     // Collision bounds (AABB half-extents)
     void setWorldBounds(float minX, float maxX, float minZ, float maxZ);
+    void setCollisionBoxes(const std::vector<CollisionBox>& boxes);
 
 private:
+    bool collidesWithAny(float x, float z) const;
     glm::vec3 m_position{0.0f, 0.0f, 0.0f};
     float m_rotation = 0.0f; // Y-axis yaw in radians
     float m_pitch = 0.0f;    // vertical look angle in radians
@@ -61,6 +64,10 @@ private:
     float m_boundsMaxX = 10.0f;
     float m_boundsMinZ = -10.0f;
     float m_boundsMaxZ = 10.0f;
+
+    // Collision
+    std::vector<CollisionBox> m_collisionBoxes;
+    static constexpr float PLAYER_RADIUS = 0.3f;
 
     Mesh m_mesh; // simple placeholder mesh
 };

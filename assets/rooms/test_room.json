@@ -5,6 +5,21 @@
     "depth_geometry": "",
     "first_person": false,
     "ambient_audio": "assets/audio/ambient_forest.wav",
+    "eye_height": 1.7,
+    "player_spawn": [0.0, 0.0, 3.0],
+    "world_bounds": {
+        "min": [-4.0, -4.5],
+        "max": [4.0, 4.0]
+    },
+    "collision_boxes": [
+        { "min": [-2.25, -1.25], "max": [-1.75, -0.75] },
+        { "min": [1.75, -1.25], "max": [2.25, -0.75] }
+    ],
+    "reverb": {
+        "enabled": false,
+        "feedback": 0.1,
+        "delay_ms": 200
+    },
     "camera_position": [0.0, 3.5, 8.0],
     "camera_target": [0.0, 0.5, 0.0],
     "camera_fov": 50.0,
